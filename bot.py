@@ -28,8 +28,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configurazione bot
-BOT_TOKEN = "8767403291:AAFQfOkcKWBVk756G7cQPKkG6gccJKLvtlA"
+BOT_TOKEN = "8767403291:AAG4AJAYVa9vsuugjk4cCK6_-qdln4xeyGo"
 DB_FILE = "group_members.db"
+
+# Configurazione funzionalità
+# Imposta su True per abilitare il comando /remove_inactive, False per disattivarlo
+ENABLE_REMOVE_INACTIVE = False
 
 # Costanti
 INACTIVITY_PERIODS = {
@@ -240,8 +244,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "`/help` - Questo messaggio\n"
         "`/stats` - Mostra statistiche del gruppo\n"
         "`/remove_deleted` - Rimuove account eliminati\n"
-        "`/remove_inactive` - Rimuove utenti inattivi\n"
     )
+    
+    # Aggiungi /remove_inactive solo se abilitato
+    if ENABLE_REMOVE_INACTIVE:
+        help_text += "`/remove_inactive` - Rimuove utenti inattivi\n"
+    
     await update.message.reply_text(help_text, parse_mode="Markdown")
 
 
@@ -347,6 +355,13 @@ async def remove_deleted(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def remove_inactive(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /remove_inactive - Rimuove utenti inattivi."""
+    # Verifica se la funzione è abilitata
+    if not ENABLE_REMOVE_INACTIVE:
+        await update.message.reply_text(
+            "❌ La funzione di rimozione utenti inattivi è attualmente disattivata."
+        )
+        return
+    
     if not update.message.chat.type in ["group", "supergroup"]:
         await update.message.reply_text(
             "❌ Questo comando funziona solo nei gruppi."
@@ -429,6 +444,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Gestione selezione periodo inattività
         elif callback_data.startswith("period_"):
+            # Verifica se la funzione è abilitata
+            if not ENABLE_REMOVE_INACTIVE:
+                await query.edit_message_text(
+                    "❌ La funzione di rimozione utenti inattivi è attualmente disattivata."
+                )
+                return
+            
             period_str = callback_data.replace("period_", "")
             days = INACTIVITY_PERIODS.get(period_str)
 
@@ -488,6 +510,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         elif callback_data.startswith("confirm_inactive_confirm_"):
+            # Verifica se la funzione è abilitata
+            if not ENABLE_REMOVE_INACTIVE:
+                await query.edit_message_text(
+                    "❌ La funzione di rimozione utenti inattivi è attualmente disattivata."
+                )
+                return
+            
             operation_key = callback_data.replace("confirm_", "")
             operation = PENDING_OPERATIONS.get(operation_key)
 
@@ -517,6 +546,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             del PENDING_OPERATIONS[operation_key]
 
         elif callback_data.startswith("cancel_inactive_confirm_"):
+            # Verifica se la funzione è abilitata
+            if not ENABLE_REMOVE_INACTIVE:
+                await query.edit_message_text(
+                    "❌ La funzione di rimozione utenti inattivi è attualmente disattivata."
+                )
+                return
+            
             operation_key = callback_data.replace("cancel_", "")
             await query.edit_message_text("❌ Operazione annullata.")
             if operation_key in PENDING_OPERATIONS:
